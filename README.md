@@ -7,7 +7,7 @@ Authors typically care about two things when publishing books: popularity and im
 
 When we look at what drives book purchasers (or suggesters, in the case of some library acquisitions that are patron-driven), the title jumps out as one of the main criteria upon which someone might make a decision to acquire or not acquire any particular book. Thus I arrived at my problem question: Can title words be used to create a predictive model that generates how many libraries might hold a book?
 
-As a published author, I know that many of us struggle with what to title our books to achieve the greatest reach. I have long wished for some sort of book-title calculator that could give me subject-specific guidance. I did find one “best-seller novel” book-title calculator out there (http://www.lulu.com/titlescorer/), but for those of us publishing other types of books to niche-market audiences, it would be useful to have a topic-specific generator. (The Lulu Titlescorer also requires a lot of user-input decisions on myriad title characteristics that require significant grammatical knowledge; I was hoping to create a calculator that only needs the title as input.) I decided to use my own area of academic research--tattoo history and culture--as a starting point for a model that, if successful, could be used for other niche subject areas. The calculator will be hosted on two different websites: my personal research website tattoohistorian.com and the Center for Tattoo History and Culture (centerfortattoo.org), a foundation for which I serve as volunteer director.
+As a published author, I know that many of us struggle with what to title our books to achieve the greatest reach. I have long wished for some sort of book-title calculator that could give me subject-specific guidance. I did find one “best-seller novel” book-title calculator out there (http://www.lulu.com/titlescorer/), but for those of us publishing other types of books to niche-market audiences, it would be useful to have a topic-specific generator. (The Lulu Titlescorer also requires a lot of user-input decisions on myriad title characteristics that require significant grammatical knowledge; I was hoping to create a calculator that only needs the title as input.) I decided to use my own area of academic research--tattoo history and culture--as a starting point for a model that, if successful, could be used for other niche subject areas. The calculator will be hosted on two different websites: my personal research website tattoohistorian.com and the Center for Tattoo History and Culture (centerfortattoo.org), a foundation for which I serve as volunteer director. What I describe below is the beginnings of a project that I plan to continue working on.
 
 #### Data Acquisition:
 
@@ -54,7 +54,7 @@ I used tf-idf for word tokenization to be able to account for more unique words 
 Topic Modeling as Categorical Variables:
 I used Latent Dirichlet Allocation to assign topics to each title based on their similarity to other titles in the data set. I experimented with a variety of hyperparameters (both in the CountVectorizer function that tokenized the title words and word-groups and in the LDA model itself). As with the titles themselves, my hypothesis that the stopwords do matter in a positive way held true here as well. When I took out common English stopwords, the top words in each topic made less sense as a cohesive unit. N_gram range of 1-3. Learning offset of 50. (quite a bit above the default of 10.). Since it’s a small dataset, I increased the max iterations to 15 and that seemed to improve the groupings.
 
-Determining whether the topic modeling is representative of distinct topics in the dataset is, of course, subjective. As I know this dataset very well, it seemed to me that the number of topics coalesced into something workable at around 7 topics. This is where I started to see clear categories for fiction, poetry, history, the military, and subgenres of tattoo subjects like Japanese and Maori tattooing that definitely form their own sub-corpuses within the dataset. I would like to spend much more time reading about the hyperparameter selection, particularly the document and topic priors (and specifically this academic paper: https://mimno.infosci.cornell.edu/papers/NIPS2009_0929.pdf) to tweak this part of the model further.
+Determining whether the topic modeling is representative of distinct topics in the dataset is, of course, subjective. As I know this dataset very well, it seemed to me that the number of topics coalesced into something workable at 8 topics. This is where I started to see clear categories for fiction, poetry, history, the military, and subgenres of tattoo subjects like Japanese and Maori tattooing that definitely form their own sub-corpuses within the dataset. I would like to spend much more time reading about the hyperparameter selection, particularly the document and topic priors (and specifically this academic paper: https://mimno.infosci.cornell.edu/papers/NIPS2009_0929.pdf) to tweak this part of the model further.
 
 Non-title-derived variables:
 I tried out adding in “is_fiction” and “is_non_adult” categorical features. The former was determined by assigning 1 to books with a genre of fiction or poetry. The latter determined by assigning a 1 to any books with a non-adult audience indicated in the record.
@@ -63,9 +63,9 @@ Ultimately I was able to determine that these variables did not affect the predi
 
 #### Data Problems:
 
-Given the extreme skew of the data, I decided to limit the model to library count values of 2 to 1500. Having so many library counts of 1 was having an undue influence on my data, so I decided to have the model focus on library counts of 2 or greater. On the other end of the value spectrum, outliers were also affecting my predictions. I made the decision to make a library count of 1500 the top value for my model based on the data visualization and where the values started to really thin out as well as taking into consideration that 1500 is more than 4 standard deviations from the mean (the standard deviation on the full dataset was 312 and the mean was 147. By narrowing the data to a range of library counts between 2 and 1500 the mean changed to 167 with a standard deviation of 253. 
+Given the extreme skew of the data, I decided to limit the model to library count values of 2 to 1500. Having so many library counts of 1 was having an undue influence on my data, so I decided to have the model focus on library counts of 2 or greater. On the other end of the value spectrum, outliers were also affecting my predictions. I made the decision to make a library count of 1500 the top value for my model based on the data visualization and where the values started to really thin out as well as taking into consideration that 1500 is more than 4 standard deviations from the mean (the standard deviation on the full dataset was 312 and the mean was 147). By narrowing the data to a range of library counts between 2 and 1500 the mean changed to 167 with a standard deviation of 253. 
 
-In the future I would like to experiment more with other subsets of the data to see if I can further improve the model.
+In the future I would like to experiment more with other subsets of the data to see if I can further improve the model, for example library counts of 10 to 1500.
 
 #### The Model:
 
@@ -73,7 +73,7 @@ I tried a wide range of different regression model types and two scored reasonab
 
 To perform cross validation, I set up a train/test split on each of various combinations of features (4 different combinations) with one third going to the test set. With no hyperparameters adjusted from the default, the model was severely overfit on the training set and scored terribly on the test set (with an r-squared score slightly in the negative). By adjusting hyperparameters such as n_estimators and min_samples_leaf, I was able to bring down the overfitting and get the test set consistently scoring with nearly matching r-squared and explained variance scores of 6.3 and 6.4%. The mean absolute error on the test set was 165 (which was reasonable considering the range of library counts in the training set ran from 2 to 1500).
 
-Using GridSearchCV, I was able to iterate over various hyperparameters and found that the best estimator parameters were max_depth: 15, max_features': 0.3, min_samples_leaf: 7, and n_estimators: 50.
+Using GridSearchCV, I was able to iterate over various hyperparameters and found that the best estimator parameters were max_depth: 20, max_features: 0.3, min_samples_leaf: 5, and n_estimators: 100.
 
 #### Deployment:
 
@@ -81,9 +81,9 @@ In order to deploy this model, I will need to set up a pipeline for the user-inp
 
 #### Future goals:
 
-It may be worth creating a model that is actually a set of models--one for the low value counts (just 1, or something like 1 to 10), one for the middle range, and one for the high outliers. I’d also like to experiment with voting models.
+Given that the model consistently overpredicts low library counts and underpredicts high library counts in the test set, it may be worth creating a model that is actually a set of models--one for the low value counts (just 1, or something like 1 to 10), one for the middle range, and one for the high outliers. I’d also like to experiment with voting models.
 
-I’d want to do more feature-engineering experiments. One thing that seems to have a lot of significance with titles is the sentiment. I’d like to try out some of the other sentiment analysis libraries like VaderSentiment and see if they perform better (or differently). I also would like to write a function for a feature that takes into account the position of words in each title string. This could take at least two forms: an iteration over all words in the training set or an iteration over just the top words.
+I want to do more feature-engineering experiments. One thing that seems to have a lot of significance with titles is the sentiment. I’d like to try out some of the other sentiment analysis libraries like VaderSentiment and see if they perform better (or differently). I also would like to write a function for a feature that takes into account the position of words in each title string. This could take at least two forms: an iteration over all words in the training set or an iteration over just the top words.
 
 I may want to think about putting a spell checker into my input pipeline so as to account for user error.
 
@@ -91,13 +91,13 @@ I’d also like to think about a model that makes predictions for popularity bas
 
 Other future research might determine whether better outcomes in predictions can emerge from having the user input additional criteria such as the genre of the book (fiction, biography, poetry, history, etc.). I would also like to try re-running the model using only books pulled from a subject keyword search on tattoo* rather than a general keyword search to reduce the noise in the data.
 
-I’d also like to try this as a classification model problem. Instead of predicting continuous values, I could predict whether a book would fall into one of two or more set ranges for popularity.
+I’d also like to try this as a classification model problem. Instead of predicting continuous values, I could predict whether a book would fall into one of several set ranges for popularity, e.g. 1 to 9, 10 to 99, 100 to 999, 1000 and over.
 
 Also I’d like to add on other metrics such as the Amazon.com sales rank and overall rating and GoodReads rating.
 
 #### Conclusion:
 
-A popularity prediction calculator has value as one of several tools in an author’s toolbox to help craft and narrow choices of book title. This current model predicts the total number of libraries that will hold a book 6.5% better than randomly guessing; in other words, my predictive model using the title alone explains 6.5% of the variance. 
+A popularity prediction calculator has value as one of several tools in an author’s toolbox to help craft and narrow choices of book title. This current model predicts the total number of libraries that will hold a book 6.5% better than randomly guessing; in other words, my predictive model using the title alone explains 6.5% of the variance. This can be helpful when narrowing down title choice among several different options.
 
 
 #### Endnotes:
