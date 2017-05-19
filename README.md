@@ -110,6 +110,8 @@ A popularity prediction calculator has value as one of several tools in an autho
 
 Here are some references that were helpful to me:
 https://tedunderwood.com/2012/04/07/topic-modeling-made-just-simple-enough/
+
 http://blog.christianperone.com/2011/09/machine-learning-text-feature-extraction-tf-idf-part-i/
+
 http://stackoverflow.com/questions/20463281/how-do-i-solve-overfitting-in-random-forest-of-python-sklearn
 
