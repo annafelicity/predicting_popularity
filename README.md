@@ -33,7 +33,9 @@ By then dropping duplicate rows that had the same URL, I was able to take partia
 
 I further narrowed the dataset to just printed books and those either published in English or where the language was not noted (the vast majority of the latter, from a perusal of the data, are in English). I did this because early experiments with natural language processing techniques demonstrated that foreign words were complicating the model and the goal of the calculator is to predict English-language titles. Then I also dropped about 1000 rows where the library count was absent. (See endnote 2.) The resulting dataset for modeling ended up being 5313 rows. As above, ideally this will be reduced somewhat more if I have a chance to de-dupe the 424 rows described above.
 
-Looking at the value counts for the total counts of library holdings, it became clear that the data had a very uneven distribution skewed heavily right. It is essentially split in two with about half the data falling into library counts of 25 or less and the rest falling into a much more gentle curve between values of 25 and about 3500. In fact 2597 titles are held by just one library.
+Looking at the value counts for the total counts of library holdings, it became clear that the data had a very uneven distribution skewed heavily right. It is essentially split in two with about half the data falling into library counts of 25 or less and the rest falling into a much more gentle curve between values of 25 and about 3500. In fact 2597 titles are held by just one library each.  You can see the library-count distribution here:
+
+![library count distribution](/images/total_libcount_distribution.png)
 
 #### Feature Engineering/Feature Extraction:
 
@@ -71,13 +73,27 @@ In the future I would like to experiment more with other subsets of the data to 
 
 I tried a wide range of different regression model types and two scored reasonably well in early tests to consider for further model testing: RandomForest Regressor and GradientBoosting Regressor. The model types that were eliminated in early testing were AdaBoost, ExtraTrees, MLB, SVR, and basic Ridge and Lasso Regressors (Ridge performed almost good enough for further testing).
 
-To perform cross validation, I set up a train/test split on each of various combinations of features (4 different combinations) with one third going to the test set. With no hyperparameters adjusted from the default, the model was severely overfit on the training set and scored terribly on the test set (with an r-squared score slightly in the negative). By adjusting hyperparameters such as n_estimators and min_samples_leaf, I was able to bring down the overfitting and get the test set consistently scoring with nearly matching r-squared and explained variance scores of 6.3 and 6.4%. The mean absolute error on the test set was 165 (which was reasonable considering the range of library counts in the training set ran from 2 to 1500).
+To perform cross validation, I set up a train/test split on each of various combinations of features (4 different combinations) with one third going to the test set. With no hyperparameters adjusted from the default, the model was severely overfit on the training set and scored terribly on the test set (with an r-squared score slightly in the negative). By adjusting hyperparameters such as n_estimators and min_samples_leaf, I was able to bring down the overfitting and get the test set consistently scoring better. 
+ 
+Using GridSearchCV, I was able to iterate over various hyperparameters and found that the best estimator parameters were max_depth: 20, max_features': 0.3, min_samples_leaf: 5, and n_estimators: 100. Running the training and test sets with these parameters, I was able to achieve nearly matching r-squared and explained variance scores of 6.3 and 6.4%. The mean absolute error on the test set was 165 (which was reasonable considering the range of library counts in the training set ran from 2 to 1500).
+ 
+When I re-ran the entire data set using these grid-searched hyperparameters, the results improved even more. Predicted vs. actual values on the entire data set had r-squared and explained variance rise to 26% and the mean absolute error decline to 146.
 
-Using GridSearchCV, I was able to iterate over various hyperparameters and found that the best estimator parameters were max_depth: 20, max_features: 0.3, min_samples_leaf: 5, and n_estimators: 100.
+Looking at a scatter plot of the predicted versus actual values on the entire data set, you can see that the higher values are being underpredicted and the lower values are being overpredicted. I discuss later in this report several thoughts on solving this problem.
+
+![predicted vs actual values](/images/actual_vs_predicted_libcount.png)
+
+And a detail of the lower values, since they are so densely packed in the above image:
+
+![detail predicted vs actual](/images/actual_vs_predicted_libcount_detail.png)
 
 #### Deployment:
 
 In order to deploy this model, I will need to set up a pipeline for the user-input titles to be transformed into the same features as the existing model. This brings up the issue of controlling for the year, as the dataset reflects a wide historical span (1850-today). A book that has only been out for one year (or zero years) will not be in as many libraries as one that has been out for several. I have been experimenting with having the model predict outcomes for library holdings after 1, 5, and 10 years to see if there is a difference.
+
+You can see here some outcomes of experiments with hypothetical user-input titles:
+
+![sample predictions](/images/sample_predictions.png)
 
 #### Future goals:
 
