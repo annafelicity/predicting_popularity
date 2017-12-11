@@ -7,8 +7,9 @@ from textblob import TextBlob
 from textstat.textstat import textstat
 from sklearn.preprocessing import LabelBinarizer
 
-user_input = str(sys.argv)
-x = [(user_input, 0)]
+
+title = str(sys.argv)
+x = [(title, 0)]
 df_x = pd.DataFrame(x, columns=["title", "age_in_2017"])
 
 #turn title into proper title
@@ -105,3 +106,4 @@ result = rfr_final.predict(X)
 result_int = result.astype(int)
 
 print(result_int)
+
